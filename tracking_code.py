@@ -24,19 +24,15 @@ def inference_image(model, image):
     
     results = model(image)
     #print(results)
-
-
     preds = results[0].boxes.data.cpu().numpy()
     bbox_list = preds[..., :4]
     #print(bbox_list)
-
     #corresponds to the probability/confidence score of each predicted bounding box
     prob_list = preds[..., 4]
     #confidence score of the bounding box
     #print(prob_list)
     label_list = preds[..., 5].astype(np.int32)
     #print(label_list)
-
     return bbox_list, prob_list, label_list
 
 def draw_image(image, bbox_list, prob_list, label_list, labels):
@@ -131,6 +127,7 @@ def main():
             for i in range(len(crop_list)):
                 #create object instance
                 ob = object_()
+                #update properly!
                 ob.id = ob.update_id()
                 ob.keypoints = keypoints_list[i]#put in the keypoints that have been calculated
                 ob.features = features_list[i]#put in the features that have been found
@@ -148,6 +145,7 @@ def main():
             #TODO:compare between current object's centerpoint and previous object's centerpoint
 
             #--------------- search function within the frames' frame list
+            #how to search for prevprev frame?
             def search_frame(frames, frame_count):
                 #how to know the index of the frame within frames list?            
                 for i, element in enumerate(frames):
@@ -158,25 +156,36 @@ def main():
                         previous_element = frames[i-1]
                         return previous_element
             #-----------
-            
             for i in range(len(f.objects_lists)):
-                #if same class type
-                #if the object in the current frame have the same id with the object from the previous frame
+                #check the objects have same class type
                 if frame_count == 1:
                     continue
                 else:
                     prev = search_frame(fs, frame_count)
                     for j in prev.objects_lists[j]:
-                        if f.objects_lists[i].class_type == prev.objects_lists[j] #every object from previous frame
-                    
+                        #class type check
+                        if f.objects_lists[i].class_type == prev.objects_lists[j].class_type #every object from previous frame
+                            #get euclidean distance and if within threshold..
+                            temp_cp = f.objects_lists[i].centerpoint
+                            temp_cpprev = prev.object_lists[j].centerpoint
+                            distance = ((temp_cp[0]-temp_cpprev[0])**2 + (temp_cp[1]-temp_cpprev[1])**2)
+                            if distance > 10:
+                                continue
+                            else:
+                                #if key/feature similar - use bf matching algorithm
+                                matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                                matches = matcher.match(queryDescriptors, trainDescriptors, mask)
+                                    # Detect the keypoints and compute the descriptors for the query and train images
+                                    query_kp, query_desc = detector.detectAndCompute(query_img, None)
+                                    train_kp, train_desc = detector.detectAndCompute(train_img, None)
+                                    if matches
+                                    #set same id
+                                    
+                        else:
+                             #if class type differ
 
-                    #get euclidean distance and if within threshold
-
-                    #if key/feature similar - use bf matching algorithm
-
-                        #set same id
-
-            #draw bounding box and id of the tracked object
+                            
+                #draw bounding box and id of the tracked object
 
 
 
