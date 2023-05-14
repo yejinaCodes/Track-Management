@@ -63,8 +63,10 @@ def crop_image(frame, bbox_list):
    
     return roi
 
+
 def main():
     
+    frame_count = 0
     fs = frames_()
     r_id_matrix = []
 
@@ -86,7 +88,7 @@ def main():
         f = frame_()
         if ret:
             inference_result = inference_image(model, frame[..., ::-1])
-            #only get bbox_list return
+            #only get bbox_list in  return
             bbox_list = inference_result[0]
             print(bbox_list) 
             #get all the bbox list of the current frame and crop
@@ -99,6 +101,7 @@ def main():
                 len_bbox_list = len(bbox_list)
                 #print(bbox_list[0])
                 for i in range(len_bbox_list):
+                    #check how it crops
                     cv2.imshow('cropped image', crop_image(frame, bbox_list[i]))
                     #why can't it save all the outcome?
                     crop_list.append(crop_image(frame, bbox_list[i]))
@@ -117,30 +120,63 @@ def main():
             centerpoint_list = []
             #first convert to gray scale
             for i in range(len(crop_list)):
-                gray_img = cv2.cvtColor(crop_list[0], cv2.COLOR_BGR2GRAY)
+                gray_img = cv2.cvtColor(crop_list[i], cv2.COLOR_BGR2GRAY)
                 moment = cv2.moments(gray_img)
                 x = int(moment["m10"]/moment["m00"])
                 y = int(moment["m01"]/moment["m00"])
                 tuple = (x,y)
-                return tuple
+                centerpoint_list.append(tuple)
 
-
-
-            #create object instance
             #set all the values of the object instance
             for i in range(len(crop_list)):
-                #check??
-                i.id = i.update_id()
-                i.keypoints = keypoints_list[i]#put in the keypoints that have been calculated
-                i.features = features_list[i]#put in the features that have been found
-                i.centerpoint = centerpoint_list[i]#put in the centerpoint that has been found
-                i.class_type = inference_result[2]#put in the resulting class type from yolov8 inference
+                #create object instance
+                ob = object_()
+                ob.id = ob.update_id()
+                ob.keypoints = keypoints_list[i]#put in the keypoints that have been calculated
+                ob.features = features_list[i]#put in the features that have been found
+                ob.centerpoint = centerpoint_list[i]#put in the centerpoint that has been found
+                ob.class_type = inference_result[2]#put in the resulting class type from yolov8 inference
                 #add to frame_ instance
-                f.add(i)
-                r_id_add(i)
+                f.add(ob)
+                r_id_add(ob)
 
+            #append frame in frames
+            fs.add(f)
+            frame_count += 1
 
+            #compare between objects within current frame with the previous frame's object
+            #TODO:compare between current object's centerpoint and previous object's centerpoint
 
+            #--------------- search function within the frames' frame list
+            def search_frame(frames, frame_count):
+                #how to know the index of the frame within frames list?            
+                for i, element in enumerate(frames):
+                    if i == 0:
+                        continue
+                    if i == (frame_count):
+                        #finding previous frame from frames list
+                        previous_element = frames[i-1]
+                        return previous_element
+            #-----------
+            
+            for i in range(len(f.objects_lists)):
+                #if same class type
+                #if the object in the current frame have the same id with the object from the previous frame
+                if frame_count == 1:
+                    continue
+                else:
+                    prev = search_frame(fs, frame_count)
+                    for j in prev.objects_lists[j]:
+                        if f.objects_lists[i].class_type == prev.objects_lists[j] #every object from previous frame
+                    
+
+                    #get euclidean distance and if within threshold
+
+                    #if key/feature similar - use bf matching algorithm
+
+                        #set same id
+
+            #draw bounding box and id of the tracked object
 
 
 
